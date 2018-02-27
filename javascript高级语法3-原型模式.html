@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>js高级语法3-原型模式 </title>
+	</head>
+	<body>
+		<script>
+			/*
+			 javascript原型模式（prototype）：
+			1. 原型是一个对象，其他对象可以通过它实现属性的继承，所有的对象在默认的情况下都有一个原型。
+			 因为原型的本身也是对象。所以一个类的真正原型是被类的内部的prototype属性所持有。
+			2.什么可以称之为对象？
+			在javascript中，一个对象就是任何的无序的键值对的集合。
+			如果他不是一个主数据类型（undefined，null，boolean，number，string）
+			其他的通通叫做对象
+			*/
+			
+			/*
+			 javascript中的原型是和函数紧密连接的；
+			 var o ={} 他不是用function定义的，他有原型吗？
+			 有。
+			 每个通过函数和new操作符生成出来的对象都持有一个属性  __proto__,这个属性
+			 保存了创建他的构造函数的prototype的原型引用。
+			 * */
+			/*
+			function Person(){}  // 定义一个空对象
+			Person.prototype.name="张三";
+			Person.prototype.showName=function(){
+				//这个this表示调用本函数的一个具体实例化的类
+				alert(this.name);
+			}			
+			new Person().showName();
+			
+		
+			var cat = {};
+		//	cat.prototype.name="112";//报错，prototype未定义
+			//默认隐藏的调用下面的代码：
+			Object.getPrototypeOf(cat).name="zhangdan"; //这是获取隐藏原型的方法，浏览器支持度不好
+			cat.__proto__.master = "javascript";
+			//上边两个是显式调用，下面是隐式调用，作用是一样的
+			cat.age=2;
+			cat['sex']="man";
+			
+			alert(cat.name+" "+cat.master+" "+cat.age+" "+cat["sex"]);
+		*/		
+		 	//利用原型模式实现简单继承
+		 	function per(){
+		 		this.getName = function(str){
+		 			alert(str);
+		 		}
+		 	}
+		 	per.prototype.getAge = function(age){
+		 		alert(age);
+		 	}
+		 	//不完全继承 
+		 	var a = {};//空类
+		 	a.__proto__ = per.prototype; 
+		 	//把要被继承的原型引用，赋值给要继承的类，相当于一个挂载
+		 	//如果要继承的类是一个空类，那么就会完全继承
+			a.getAge(3);
+			//a.getName("张丹"); //这个方法 报错，因为继承的是原型，也就是上一级的所有东西，
+			//但是不包括被继承类自身定义的属性和方法
+			
+		
+			//简单方式实现继承（js中无法实现多继承）
+			//完全继承
+			var b = {};
+			b.__proto__ = new per();
+			b.__proto__.constructor = b;
+			b.getAge(9);
+			b.getName("xiaowang");
+			
+			//串联继承
+			function m(){
+				this.showM = function(){
+					alert("I am is M ")
+				}
+			}
+			function n(){
+				this.showN = function(){
+					alert("I am is N ")
+				}
+			}
+			
+			function k(){};
+			n.prototype = new m();
+			n.prototype.constructor = n;
+			
+			k.prototype = new n();
+			k.prototype.constructor = k;
+			var boo = new k();
+			boo.showM();
+			boo.showN();
+		</script>
+	</body>
+</html>

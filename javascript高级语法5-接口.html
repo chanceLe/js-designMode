@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法5-接口</title>
+	</head>
+	<body>
+		<script>
+			/*
+			 * 接口：
+			 * 1.注解的方法  
+			 * 		最简单，功能最弱，利用interface和implement“文字”
+			 *      把他们用注解的方式显式表现出来。
+			 * 2.属性检验法
+			 * 3.鸭式变形法
+			 
+			 * */
+			
+			//1.注解方法
+			function demo1(){
+			(function b(){
+				/*
+				 * 用注释来定义一个接口
+				 * interface PersonDao(){
+				 * 	function add(obj);
+				 * function remove(obj);
+				 * function find(id);
+				 * }
+				 */
+				//用注释的方式实现它
+				/*
+				 * PersonDaoImpl implement interface
+				 * */
+				var PersonDaoImpl = function(){};
+				PersonDaoImpl.prototype.add = function(obj){
+					//
+				}
+				PersonDaoImpl.prototype.remove = function(obj){
+					//
+				}
+				PersonDaoImpl.prototype.find = function(id){
+					//
+				}
+				/*
+				 * 千万不要感觉它是没有任何意义的
+				 * 1.大型项目靠的就是标准和规范
+				 * 2.这样的写法会让你的程序员在没有写实现之前有充分时间做代码的设计和架构
+				 * 3.缺点：要人为的遵守
+				 
+				 * */
+			})();
+			}
+			//2.属性检验法
+			function demo2(){
+			(function(){
+				/*
+				 * 用注释来定义一个接口
+				 * interface PersonDao(){
+				 * 	function add(obj);
+				 * function remove(obj);
+				 * function find(id);
+				 * }
+				 */
+				/*
+				 * PersonDaoImpl implement interface
+				 * */
+				var PersonDaoImpl = function(){
+					this.implementInterface=["PersonDao"];
+				};
+				PersonDaoImpl.prototype.add = function(obj){
+					//
+					alert(obj);
+				}
+				PersonDaoImpl.prototype.remove = function(obj){
+					//
+				}
+				PersonDaoImpl.prototype.find = function(id){
+					//
+				}
+				
+				function addObj(obj){
+					var PersonDao = new PersonDaoImpl();
+					//开始检查
+					if(!impl(PersonDao,"PersonDao")){
+						throw new Error("类PersonDaoImpl没有实现接口PersonDao")
+					}else{
+						PersonDao.add(obj);
+					}
+				}
+				addObj("张三")
+				//他接收一个不定参数:属性检验函数
+				function impl(obj){
+					//遍历传入对象的属性
+					for(var i=1;i<arguments.length;i++){
+						var interfaceName = arguments[i];
+						var interfaceFound = false;
+						for(var j=0;j<obj.implementInterface.length;j++){
+							if(obj.implementInterface[j] == interfaceName){
+								interfaceFound=true;
+								break;
+							}
+						}
+						if(!interfaceFound){
+							return false;
+						}
+					}
+					return true;
+				}
+			})()
+			}
+			
+			//3. 鸭式变形法：
+			/*来源于一个国外老头，他有句名言：
+			 * "像鸭子一样走路，并且会嘎嘎叫的东西"
+			 * 换言之：
+			 * 如果对象具有与接口定义的方法名字的所有方法（同名的所有方法），那么就认为实现了接口。
+			 */
+			
+			function demo3(){
+			(function(){
+				//定义一个接口类
+				var Interface = function(name ,methods){
+					if(arguments.length!=2){
+						alert("interface must have two params")
+					}
+					this.name = name; //接口名字
+					this.methods = [];//定义一个空数组来装载函数名
+					for(var i=0;i<methods.length;i++){
+						if(typeof methods[i] != "string"){
+							alert("method name must be string")
+						}else{
+							this.methods.push(methods[i]);
+						}
+					}
+				}
+				// 定义接口的一个静态方法来实现接口与实现类的直接检验
+				//静态方法不要写成Interface.prototype.*   因为这是写到接口的原型链上的
+				//我们要把静态的函数直接写到类层次上。
+				Interface.ensureImplements = function(obj){
+					if(arguments.length<2){
+						alert("至少两个参数");
+						return false;
+					}
+					//遍历
+					for(var i=1;i<arguments.length;i++){
+						var inter = arguments[i];
+						//如果你是接口，就必须是interface类型的，
+						if(inter.constructor != Interface){
+							throw new Error("必须是接口类型")
+						}
+						//遍历函数集合并分析
+						for(var j=0;j<inter.methods.length;j++){
+							var method = inter.methods[j];
+							//实现类中必须有方法名 和 接口中所有的方法名相同
+							if(!obj[method] || typeof obj[method]!="function"){
+								throw new Error("类中实现类并没有完全实现接口中的所有方法")
+							}
+						}
+					}
+				};
+				
+				//应用
+				//定义自己的接口
+				var GridManager = new Interface("GridManager",["add","remove","list"]);
+				var FormManager = new Interface("FormManager",["save"]);
+				
+				function commonManager(){
+					//先实现方法
+					this.add = function(){
+						alert("ok");
+					}
+					this.list = function(){}
+					this.remove = function(){}
+					this.save = function(){}
+					//检验
+					Interface.ensureImplements(this,GridManager,FormManager)
+				}
+				
+				var c = new commonManager();
+				c.add();
+			})()
+			}
+			/* 接口的重要性：
+			 * 1.大型项目提高代码的灵活度
+			 * 2.松耦合
+			 * 3.在团队开发的时候，有时候在你真正编码之前就可以写API（自己的类库）。
+			 * 这些类库就可以事后进行实现。
+			 * 开始的时候我们就可以对整个项目是否可行，通过接口就可以模拟出来。
+			 */
+			
+		</script>
+	</body>
+</html>

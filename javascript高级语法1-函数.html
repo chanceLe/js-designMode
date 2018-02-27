@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法1-函数</title>
+	</head>
+	<body>
+	  <script>
+	  	function print(p){
+	  		console.log(p.toString(),p)
+	  	}
+	  	/*
+	  	var arr= new Array();
+	  	arr.push(1);
+	  	arr.push(2);
+	  	arr.push(3);
+	  	arr.push(4);
+	  	print(arr);
+	  	print(arr.join(":"))
+	  	var  arr2 = [5,6,7,8]
+	  	print(arr.concat(arr2))
+	  	//each() 扩展函数的方法
+	  	Array.each = function(array,fn){
+	  		for(var i=0;i<array.length;i++){
+	  			fn(array[i]);
+	  		}	
+	  	}
+	  	Array.each(arr,function(v){
+	  		print(v);
+	  	})
+	  	
+	  	//回调函数定义
+	  function add(x,y,fn){
+	  	this.x=x||1;
+	  	this.y=y||1;
+	  	if(fn){
+	  		fn(this.x + this.y);
+	  	}
+	  }
+	  
+	  add(3,5,function(v){
+	  	if(v>5){
+	  		alert("res >5")
+	  	}else{
+	  		alert(res <=5"")
+	  	}
+	  })
+	 
+	 
+	   //函数传参
+	     //1.参数传递随意性（可以少传或多传参数）
+	     function add(x,y,z){
+	     	this.x = x||0;
+	     	this.y = y||0;
+	     	this.z = z||0;
+	     	alert(this.x+this.y+this.z);
+	     }
+	     
+
+	     add(12,3,4,5);
+	     //弊端：无法像java等高级语言那样有函数精确复写的特性。
+	     //技巧：如果你这个类是工具类的情况下，那么接收的参数最好是对象。
+	     //conf={gridName:"",gridCode:"",gridSize:""}
+	     function gridUtil(conf){
+	     	alert(conf["gridName"]+conf["gridSize"]);
+	     }
+	     gridUtil({gridName:"zhangsan",gridSize:"20"})
+ 
+     	//传值还是传地址	
+     	var i = 100;
+     	var s = "one";
+     	function add3(i,s){
+     		i++;
+     		s+="--"
+     	}
+     	add3();
+     	alert(i);
+     	alert(s); //证明基础变量传递数值。
+     	
+     	var o = {name:"zhangdan"};
+     	function change(o){
+     		 o["name"] = "javascript";
+     	}
+     	change(o);
+     	alert(o.name);  //证明自定义对象传参方式传的是地址。
+     	
+   
+     	//函数递归
+     	function add4(start,end){
+     		var num= 0;
+     		num += start;
+     		if(start<end){
+     			num += add4(start+1,end);
+     		}
+     		return num
+     	}
+       alert(add4(1,100));
+       
+      
+      //代理函数--》 用程序来决定返回的新的函数(生产函数的函数)
+      //模拟数据库
+      var person = {"jim":'m',"lili":"w"}
+      var test = function(name){
+      	if(person[name]=="m"){
+      		return function(nk,wk){
+      			alert(nk+" "+wk);
+      		}
+      	}else if(person[name]=="w"){
+      		return function(nk,wk,fk){
+      			alert(nk+" "+wk+"  "+fk);
+      		}
+      	}
+      }
+      test("jim")("ok","ok");
+      test("lili")("ok","ok","no");
+      //前端代码不常用，会使代码复杂化。架构常用。
+      
+    */   
+      
+      //eval（）函数 --》把一个字符串解析成一个函数并执行
+      var str = "var show = function(){alert(100)}()";
+      eval(str);
+      // 应用场景：数据库有时候会返回一个字符串(长得像js数组)；
+      var a = "[1,2,3]";
+      var arr = eval(a);
+      for(var i = 0;i<arr.length;i++){
+      	console.log(arr[i]);
+      }
+      
+     
+	  </script>
+	</body>
+</html>

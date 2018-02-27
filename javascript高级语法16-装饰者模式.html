@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript 高级语法16-装饰者模式</title>
+	</head>
+	<body>
+		<script>
+			/*通过需求引出装饰者模式
+			 * 
+			 */
+			
+			//接口
+			var Interface = function(name,methods){
+				if(arguments.length != 2){
+					alert("interface must have two paramters...");
+				}
+				this.name = name;//这个是接口的名字
+				this.methods = [];//定义个空数组来转载函数名
+				for (var i = 0; i < methods.length; i++) {
+					if(typeof methods[i] != "string"){
+						alert("method name must is String ...")
+					}else{
+						this.methods.push(methods[i])
+					}
+				}
+			}
+			//定义接口的一个静态方法来实现接口与实现类的直接检验
+			//静态方法不要写成Interface.prototype.* 因为这是写到接口原型连上的
+			//我们要把静态的函数直接写到类层次上
+			Interface.ensureImplements = function(object){
+				if(arguments.length<2){
+					alert("必须最少是2个参数");
+					return false;
+				}
+				//遍历
+				for (var i = 1; i < arguments.length; i++) {
+					var inter = arguments[i];
+					//如果你是接口就必须是Interface类型的
+					if(inter.constructor != Interface){
+						throw new Error("if is interface class must is Interface type");
+					}
+					//遍历函数集合并分析
+					for (var j = 0; j < inter.methods.length; j++) {
+						var method = inter.methods[j];
+						//实现类中必须有方法名字 和 接口中所有的方法名项目
+						if(!object[method] || typeof object[method] != "function"){
+							throw new Error("实现类并没有完全实现接口中的所有方法...");
+						}
+					}
+				}
+			}
+			
+			function demo(){
+				//汽车店的接口
+				var CarShop = new Interface("CarShop",["getPrice","assemble"]);
+				var myCarShop = function(){
+					this.getPrice = function(){
+						document.write(15000+"<br>");
+					}
+					this.assemble = function(){
+						document.write("汽车组装..."+"<br>")
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				
+				var jimCarShop = new myCarShop();
+				jimCarShop.getPrice();
+				jimCarShop.assemble();			
+				document.write("--------------------"+"<br>")
+				
+				/*新需求：
+				 * 汽车还会有附属产品  音响 (k),真皮沙发(M),保险杠(N)
+				 * 每一个附属的产品会影响到汽车的组装和其价格
+				 * 你能想到什么办法？
+				 */
+				
+				//改写接口
+				var CarShop2 = new Interface("CarShop2",["getPrice","assemble","addK","addM","addN"]);
+				var myCarShop2 = function(){
+					var price = 150000;
+					this.getPrice = function(){
+						document.write(price+"<br>")
+					}
+					this.assemble = function(){
+						document.write("汽车组装"+"<br>")
+					}
+					this.addK = function(){
+						price += 1000;
+					}
+					this.addM = function(){
+						price += 2000;
+					}
+					this.addN = function(){
+						price += 3000;
+					}
+					Interface.ensureImplements(this,CarShop2);
+				}
+				
+				var jimCarShop2 = new myCarShop2();
+				jimCarShop2.addK();
+				jimCarShop2.addM();
+				jimCarShop2.addN();
+				jimCarShop2.getPrice();
+				jimCarShop2.assemble();
+				
+				/*好像能成功，但是新的问题来了
+				 * 你把接口全改了，可是我继承本接口的类不一定全要有音响，沙发，保险杠。
+				 * 难道我要改变所有实现本接口的实现类吗？
+				 * 显然是不对的。
+				 */
+				//2.如果不改变接口，那我就增加子类
+				var CarShop = new Interface("CarShop",["getPrice","assemble"]);
+				var myCarShop = function(){
+					this.getPrice = function(){
+						document.write(150000+"<br>");
+					}
+					this.assemble = function(){
+						document.write("汽车组装..."+"<br>")
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				var myCarShopM = function(){
+					this.getPrice = function(){
+						document.write(150100+"<br>");
+					}
+					this.assemble = function(){
+						document.write("汽车组装..."+"<br>")
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				var myCarShopK = function(){
+					this.getPrice = function(){
+						document.write(150200+"<br>");
+					}
+					this.assemble = function(){
+						document.write("汽车组装..."+"<br>")
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				//这种方式走不通
+				/*装饰者的概念和用法：
+				 * 装饰者可以为对象添加新的特性
+				 * 透明的把对象包装在具有相同接口的新对象中
+				 */
+				
+			}
+//			demo();
+			function decorator(){
+				//装饰者模式来解决需求
+				var CarShop = new Interface("CarShop",["getPrice","assemble"]);
+				//目标对象
+				var myCarShop = function(){
+					this.getPrice = function(){
+						return 150000;
+					}
+					this.assemble = function(){
+						document.write("汽车组装...<br>");
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				//装饰类
+				var M = function(carshop){
+					this.getPrice = function(){
+						return 1000 + carshop.getPrice();
+					}
+					this.assemble = function(){
+						document.write("M组装...<br>");
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				var K = function(carshop){
+					this.getPrice = function(){
+						return 2000 + carshop.getPrice();
+					}
+					this.assemble = function(){
+						document.write("k组装...<br>");
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				var N = function(carshop){
+					this.getPrice = function(){
+						return 3000 + carshop.getPrice();
+					}
+					this.assemble = function(){
+						document.write("N组装...<br>");
+					}
+					Interface.ensureImplements(this,CarShop);
+				}
+				
+				//调用
+				
+				var car =new K(new M(new myCarShop()));
+				alert(car.getPrice());
+				car.assemble();
+			}
+			decorator();
+		</script>
+	</body>
+</html>

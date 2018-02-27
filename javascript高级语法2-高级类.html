@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法2-高级类</title>
+	</head>
+	<body>
+		<script>
+	/*		
+			//在js中利用function来定义类。
+			function Shape(){
+				var x=1;
+				var y=2;
+			}
+			//实例化对象；
+			var a = new Shape();
+			// 在类的内部用var定义的是私有变量。如何定义共有变量呢？
+			function Shape2(){
+				this.x = 1;
+				this.y = 2;
+			}
+			var b = new Shape2();
+			//this代表的是当前的实例。
+			alert(a.x);  //undefined
+			alert(b.x);  //1
+			
+			//除了定义私有变量外 还可以用var定义私有函数。
+			function Shape3(){
+				var show=function(){
+					//私有函数
+				}
+				this.show2 = function(){
+					//公有函数
+				}
+			}
+			
+			//用js模仿oop编程
+			 function Shape4(x,y){
+			 	var a = 0,b = 0;
+			 	//模仿oop编程的构造函数
+			 	var init = function(){
+			 		a = x;
+			 		b = y;
+			 	};
+			 	init();
+			 	
+			 	this.getX = function(){
+			 		return a;
+			 	}
+			 }
+			  var d = new Shape4(2,4);
+			  alert(d.getX());
+			  
+			  // js中的静态方法是作用到类身上的，而不是对象上
+			  function Person(){this.str = "zhangdan"}
+			  //静态变量
+			  Person.age = 10;
+			  Person.show = function(obj){
+			  	return obj.str	
+			  }
+			  alert(Person.show(new Person()));
+			  
+			
+			 //简单类定义方法
+			 var a = {};
+			 var array = [];
+			 a["name"] = "zhangdan";
+			 alert(a.name);
+			 
+   */			
+   			 //自定义map类
+   			 function jMap(){
+   			 	//私有变量
+   			 	var arr= {};
+   			 	//增加
+   			 	this.put = function(key,value){
+   			 		arr[key] = value;
+   			 	}
+   			 	//查询
+   			 	this.get = function(key){
+   			 		if(arr[key]){
+   			 			return arr[key]
+   			 		}else{
+   			 			return -1
+   			 		}
+   			 	}
+   			 	//删除
+   			 	this.remove = function(key){
+   			 		delete arr[key]
+   			 	}
+   			 	//遍历
+   			 	this.eachMap = function(fn){
+   			 		for(var key in arr){
+   			 			fn(key,arr[key]);
+   			 		}
+   			 	}
+   			 }
+   			 
+   			 var country =new jMap();
+   			 country.put("01","zg");
+   			 country.put("02","tg");
+   			 country.put("03","mg");
+   			 country.put("04","jnd");
+   			 
+// 			 alert(country.get("01"));
+   			 
+   			 country.eachMap(function(key,value){
+   			 	document.write(key+"-->"+value+"<br/>");
+   			 })
+		</script>
+	</body>
+</html>

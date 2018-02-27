@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法15-适配器模式</title>
+	</head>
+	<body>
+		<script type="text/javascript">
+			/*适配器是为了解决已有接口有的类不兼容问题
+			 * 类似于门面模式，但是机理是完全不同的
+			 * 门面模式为了简化接口，使调用者更加方便
+			 * 适配器是为了解决接口不兼容的问题
+			*/
+			
+			//接口
+			var Interface = function(name,methods){
+				if(arguments.length != 2){
+					alert("interface must have two paramters...");
+				}
+				this.name = name;//这个是接口的名字
+				this.methods = [];//定义个空数组来转载函数名
+				for (var i = 0; i < methods.length; i++) {
+					if(typeof methods[i] != "string"){
+						alert("method name must is String ...")
+					}else{
+						this.methods.push(methods[i])
+					}
+				}
+			}
+			//定义接口的一个静态方法来实现接口与实现类的直接检验
+			//静态方法不要写成Interface.prototype.* 因为这是写到接口原型连上的
+			//我们要把静态的函数直接写到类层次上
+			Interface.ensureImplements = function(object){
+				if(arguments.length<2){
+					alert("必须最少是2个参数");
+					return false;
+				}
+				//遍历
+				for (var i = 1; i < arguments.length; i++) {
+					var inter = arguments[i];
+					//如果你是接口就必须是Interface类型的
+					if(inter.constructor != Interface){
+						throw new Error("if is interface class must is Interface type");
+					}
+					//遍历函数集合并分析
+					for (var j = 0; j < inter.methods.length; j++) {
+						var method = inter.methods[j];
+						//实现类中必须有方法名字 和 接口中所有的方法名项目
+						if(!object[method] || typeof object[method] != "function"){
+							throw new Error("实现类并没有完全实现接口中的所有方法...");
+						}
+					}
+				}
+			}
+			function demo(){
+				//例如你已经写好一个应用API
+				//程序员依托 PcatV1版本来写客户端
+				var PcatV1Lib = new Interface("PcatV1Lib",["add"]);
+				function plib(){
+					this.add = function(x,y){
+						return x+y;
+					}
+					Interface.ensureImplements(this,PcatV1Lib);
+				}
+				//客户端
+				var lib = new plib();
+				//调用
+				alert(lib.add(1,3));
+				
+				//现在需要更换类库，但是前台写好的程序，不希望有大的变化
+				var PcatV2 = new Interface("PcatV1Lib",['add']);
+				function p2lib(){
+					this.add = function(list){
+						return eval(list.join("+"));
+					}
+					Interface.ensureImplements(this,PcatV1Lib);
+				}
+				//客户端
+				var lib = new p2lib();
+				//调用
+				//alert(lib.add(1,3)); 这时候不能这么调用了。
+				//利用适配器来解决问题
+				//添加适配器
+				var wrapper = new Interface("PcatV1Lib",['add']);
+				function wrapperpcat2lib(){
+					this.add = function(x,y){
+						var arr = new Array();
+						arr.push(x);
+						arr.push(y);
+						return new p2lib().add(arr);
+					}
+				}
+				lib = new wrapperpcat2lib()
+				alert(lib.add(5,5))
+			   /*利用适配器就可以完成客户端代码不变的情况下改变类库
+			    *但是这种情况只有客户端代码是标准的时候才可以
+			    * 否则直接修改客户端也是一个不错的选择。
+			    */
+			}
+			demo();
+		</script>
+	</body>
+</html>

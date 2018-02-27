@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Javascript高级语法10-工厂模式实例xhr</title>
+	</head>
+	<body>
+		<script>
+			//接口
+			var Interface = function(name,methods){
+				if(arguments.length != 2){
+					alert("interface must have two paramters...");
+				}
+				this.name = name;//这个是接口的名字
+				this.methods = [];//定义个空数组来转载函数名
+				for (var i = 0; i < methods.length; i++) {
+					if(typeof methods[i] != "string"){
+						alert("method name must is String ...")
+					}else{
+						this.methods.push(methods[i])
+					}
+				}
+			}
+			//定义接口的一个静态方法来实现接口与实现类的直接检验
+			//静态方法不要写成Interface.prototype.* 因为这是写到接口原型连上的
+			//我们要把静态的函数直接写到类层次上
+			Interface.ensureImplements = function(object){
+				if(arguments.length<2){
+					alert("必须最少是2个参数");
+					return false;
+				}
+				//遍历
+				for (var i = 1; i < arguments.length; i++) {
+					var inter = arguments[i];
+					//如果你是接口就必须是Interface类型的
+					if(inter.constructor != Interface){
+						throw new Error("if is interface class must is Interface type");
+					}
+					//遍历函数集合并分析
+					for (var j = 0; j < inter.methods.length; j++) {
+						var method = inter.methods[j];
+						//实现类中必须有方法名字 和 接口中所有的方法名项目
+						if(!object[method] || typeof object[method] != "function"){
+							throw new Error("实现类并且没有完全实现接口中的所有方法...");
+						}
+					}
+				}
+			}
+			
+			//xhr工厂
+			function demo1(){
+				//Ajax操作接口
+				var AjaxHandler = new Interface("AjaxHandler",["request","createXHRObject"]);
+				//ajax简单实现类
+				var Simplehandler = function(){};
+				Simplehandler.prototype = {
+					/*method:  get/post
+					 *url 请求地址
+					 * callback 回调函数
+					 * postVars 传入参数
+					 */
+					request:function(method,url,callback,postVars){
+						//1.得到xhr对象
+						var xhr = this.createXHRObject();
+						xhr.onreadystatechange = function(){				
+							if(xhr.readyState != 4){  //4代表的意思是交互完成
+								return;
+							}
+							//200正常交互完成   404 文件没找到  500内部程序出现错误
+							(xhr.status == 200)?callback.success(xhr.responseText,xhr.responseXML):
+							callback.failure(xhr.status);
+						}
+						//打开链接 
+						xhr.open(method,url,true);//true设置异步
+						//设置参数
+						if(method != "POST"){
+							postVars = null;
+						}
+						xhr.send(postVars);
+						
+					},
+					createXHRObject:function(){
+						var methods = [
+						//针对不同的浏览器用不同的方法
+							function(){return new XMLHttpRequest();},
+							function(){return new ActiveObject('Msxml2.XMLHTTP');},
+							function(){return new ActiveObject('Microsoft.XMLHTTP');},
+						]
+						//利用try catch制作一个智能循环体
+						for(var i=0;i<methods.length;i++){
+							try{
+								methods[i]();
+							}
+							catch(e){
+								continue;
+							}
+							//这句话非常重要，只有这样才能确保  不用每次请求都循环数组
+							this.createXHRObject = methods[i];
+							return methods[i]();
+						}
+						//如果全不对的话就显式报错
+						throw new Error("Error");
+					}
+				}
+				
+				//实验
+				var myHandler = new Simplehandler();
+				var callback = {
+					success:function(responseText){
+						alert("Ok")
+					},
+					failure:function(status){
+						alert("failure")
+					}
+				}
+				myHandler.request("GET","",callback);
+			}
+           
+           demo1();
+           /*
+            * 工厂模式使用场合：
+            * 1.动态实现，创建一些用不同方式实现的同一接口
+            *          可以被同等对待的一系列类，我们可以用工厂模式来实例化
+            * 2.节省设置开销，和子系统组合
+            * 		 针对不同情况的子系统，进行模块层次的收集，使其子系统使用起来变得更简单。
+            * 利与弊：
+            *   松耦合，把创建类等复杂的过程交给工厂来完成，程序员有时间和经历放到重点业务上
+            * 
+            *  弊端：工厂好用，但处理起来很复杂
+            *      代码复杂度会随之增高，一般的程序员很难驾驭
+            * 		一般的简单的类 推荐还是用new 比较好
+            */
+		</script>
+	</body>
+</html>

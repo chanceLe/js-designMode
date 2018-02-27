@@ -1,0 +1,173 @@
+<html>
+	<head>
+		<title>javascript高级语法20-责任链模式</title>
+	</head>
+	<body>
+		<script>
+			/*责任链模式
+			 * 消除发送者与接收者之间的耦合。
+			 * 1.责任链的发送者知道链的入口是谁
+			 * 2.每一个链节点知道自己的下一个节点是谁
+			 * 3.每一个链的传入和传出值是一样的；
+			 */
+			
+			//扩展filter函数
+			Function.prototype.method = function(name,fn){
+				this.prototype[name] = fn;
+				return this;
+			}
+			if(!Array.prototype.filter){
+				Array.method("filter",function(fn,obj){
+					var scope = this.Obj || window;
+					var a = [];
+					for(var i=0;i<this.length;i++){
+						if(!fn.call(scope,this[i],i,this)){
+							continue;
+						}
+						a.push(this[i]);
+					}
+					//返回过滤好的数据
+					return a;
+				})
+			}
+			
+			function demo(){
+				//扩展window
+				window.setSuccessor = function(after,before){
+					after.successor = before;
+				}
+				//用于拷贝字符串的方法  20*"-" = "------------------"
+				window.copyStr = function(num,str){
+					var newStr = '';
+					for(var i=0;i<num;i++){
+						newStr += str;
+					}
+					return newStr;
+				}			
+				//转换数组中的对象为字符串
+				var showStr = function(arr){
+					var newStr = "";
+					for(var i=0;i<arr.length;i++){
+						newStr += JSON.stringify(arr[i]);
+					}
+					return newStr;
+				}
+				
+				//书店找书和加书两个需求
+				//用户可以输入关键字找书（书号，作者，名称）
+				//不同书架管理员管理自己的书籍添加任务			
+
+				//图书类
+				var Book = function(id,name,author,type){
+					this.id = id;
+					this.name = name;
+					this.author = author;
+					this.type = type;
+				}
+				//书店
+				var myBookShop = (function(){
+					//书架
+					var jsBooks = new Array(); //JS书架
+					var cBooks = new Array(); //C语言书架
+					var pythonBooks = new Array(); //python书架
+					//内部类1
+					function addJSBook(book){
+						if(book.type == "js"){
+							jsBooks.push(book);
+						}else{
+							//负责传递到下一个功能
+							addJSBook.successor(book);
+						}
+					}
+					//内部类2
+					function addPythonBook(book){
+						if(book.type == "py"){
+							pythonBooks.push(book);
+						}else{
+							//负责传递到下一个功能
+							addPythonBook.successor(book);
+						}
+					}
+					//内部类3
+					function addCBook(book){
+						if(book.type == "c"){
+							cBooks.push(book);
+						}else{
+							//负责传递到下一个功能
+							addCBook.successor(book);
+						}
+					}
+					//设置责任链
+					setSuccessor(addJSBook,addPythonBook);
+					setSuccessor(addPythonBook,addCBook);
+					
+					//查询书籍
+					var bookList = null;
+					function findBookById(keyword){
+						if(!bookList){
+							bookList = jsBooks.concat(cBooks).concat(pythonBooks);
+						}
+						var book = new Array();
+						book = bookList.filter(function(book){
+							if(book.id.indexOf(keyword) != -1){
+								return true;
+							}else{
+								return false;
+							}
+						});
+						//进行链式查询
+						return book.concat(findBookById.successor(keyword,book));
+					}
+					function findBookByName(keyword,book){
+						book = bookList.filter(function(book){
+							if(book.name.indexOf(keyword) != -1){
+								return true;
+							}else{
+								return false;
+							}
+						});
+						return book;
+					}
+					//规划责任链
+					setSuccessor(findBookById,findBookByName);
+					
+					//真正的图书馆类
+					return function(){
+						this.addBook = function(book){
+							if(book instanceof Book){
+								//因为我知道谁是链的入口。可以这么写
+								addJSBook(book);
+							}
+						}
+						this.findBook = function(keyword){
+							return findBookById(keyword);
+						}
+						this.showBooks = function(){
+							//document.write("c语言类图书"+cBooks.toSource()+"<br>")
+							//这里的toSource()方法只有火狐支持,所以我全局定义了showStr方法					
+							document.write("js类图书"+showStr(jsBooks)+"<br>")
+							document.write("c语言类图书"+showStr(cBooks)+"<br>")
+							document.write("Python类图书"+showStr(pythonBooks)+"<br>")
+							document.write(copyStr(60,"-")+"<br>");
+						}
+					}					
+				})();				
+				//添加book
+				var pb = new myBookShop();
+				pb.addBook(new Book("00101","Extjs","zhangsan","js"));
+				pb.addBook(new Book("00102","cprimer","jim","js"));
+				pb.addBook(new Book("00103","c#","chance","c"));
+				pb.addBook(new Book("00201","c++","chance","c"));
+				pb.addBook(new Book("00202","python","py","py"));
+				pb.addBook(new Book("00203","py实战","杨国正","py"));
+				//展示
+				pb.showBooks();
+				//查询
+				document.write(showStr(pb.findBook("02"))+"<br>");
+				document.write(copyStr(60,"-")+"<br>");
+				document.write(showStr(pb.findBook("c")));			
+			}
+			demo();
+		</script>
+	</body>
+</html>

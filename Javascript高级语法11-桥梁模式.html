@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Javascript高级语法11-桥梁模式</title>
+	</head>
+	<body>
+		<script>
+			/*桥梁模式：把将抽象与实现隔离开来，以便两者单独的变化。
+			 * 这种模式对于javascript中常见的事件驱动编程有很大好处。
+			 */
+			
+			//自己的类库
+			function addEvent(obj,type,fn){
+				if(obj.addEventListener){
+					obj.addEventListener(type,fn,false);
+				}else if(obj.attachEvent){
+					obj["e"+type+fn]=fn;
+					obj[type+fn] = function(){
+						obj["e"+type+fn]();
+					}
+					obj.attachEvent("on"+type,obj[type+fn]);
+				}else{
+					obj["on"+type] = obj["e"+type+fn];
+				}
+			}
+			
+			
+			
+			function demo1(){
+				//一个页面选择宠物的例子
+				button.addEvent(element,"click",getPetByName);
+				function getPetByName(e){
+					var id = this.id;
+					asyncRequest("GET","pet.action?id="+id,function(pet){
+						console.log("request pet" + pet.responseText)
+					})
+				}
+				/*上面的做法是你在页面有一个按钮，单击会出发后面请求
+				 * 如果要进行单元测试：1.用户登录  2.找到你的这个页面 3.单击按钮
+				 * 如果需要进行效能层次上的单元测试，是很难进行并发测试的。
+				 */
+				//第二种做法   用简单的桥梁模式来解决
+				function getPetByName(id,callback){
+					var id = this.id;
+					asyncRequest("GET","pet.action?id="+id,function(pet){
+						callback(pet);
+					})
+				}
+				//定义一个桥梁将抽象和实现相互联系在一起
+				addEvent(element,"click",getPetByNameBridge);
+				function getPetByNameBridge(){
+					getPetByName(this.id,function(pet){
+						console.log("request pet" + pet.responseText);
+					})
+				}
+				/*这种做法使API和展现层完全分离
+				 * API和展现层可以灵活变动。
+				 * 这个模式在Extjs项目开发时候非常的常用。
+				 * 
+				 * 桥梁模式的其他用途：
+				 * 特权函数：当你的接口过于复杂的时候，把原本复杂的接口用桥梁的模式抽取出一大部分函数整合起来
+				 *       使之客户端更容易的调用。
+				 */
+				
+			}
+//			demo1();//demo1是伪代码 demo2是实例
+			
+			function demo2(){
+				// 特权函数
+				var p= function(){
+					var add=function(){
+						//进行复杂的数学操作
+					}
+					//这是一个信息全封闭的类，它的内部进行复杂的业务操作
+					//建立一个特权函数，让它调用起来更方便
+					this.bridge = function(){
+						return {
+							bridgeAdd:function(){
+								//执行前
+								add(3,3)
+								//执行后
+							}
+						}
+					}
+				}
+				
+				//桥梁还可以把多个类进行桥接(链接)
+				var class1 = function(a,b){
+					this.a = a;
+					this.b = b;
+				}
+				var class2 = function(c,d){
+					this.c = c;
+					this.d = d;
+				}
+				var bridgeClass = function(){
+					this.one = new class1(1,2);
+					this.two = new class2(3,4);
+				}
+				/*问，这个理念不是门面模式吗？
+				 * 不是，他的目的是在于class1和class2能独立的修改，使之完全松耦合。
+				 * 而门面模式的意义在于调用的方便。
+				 */
+				
+			}
+			
+		</script>
+	</body>
+</html>

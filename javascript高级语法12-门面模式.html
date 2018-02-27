@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法12-门面模式</title>
+	</head>
+	<body>
+		<a id="btn" href="#">click</a>
+		<script>
+			/*用途比较广，通过一个简单的例子引出门面模式
+			 * 简化类的接口体现门面的好处。
+			 * 
+			 * 门面模式作用：1.简化类的接口 2.消除类和使用本类的客户端的代码耦合
+			 *   3.通过构建一个简单的门面代码让系统变得更简单
+			 */
+			function demo1(){
+				/*各种浏览器对于DOM事件的注册是不一样的(那么每一个浏览器会被看成一个子系统)
+				  程序员如果天天和这些问题打交道的话，那么重点就偏离了原本的业务				
+				* */
+				function addEventFacade(el,type,fn){
+					if(window.addEventListener){
+						//使用火狐浏览器
+						 el.addEventListener(type,fn,false);
+					}else if(window.attachEvent){
+						//适用于IE的
+						el.attachEvent("on"+type,fn);
+					}else{
+						el["on"+type] = fn;
+					}
+				}
+				var ele = document.getElementById("btn");
+				addEventFacade(ele,"click",function(){
+					alert("ok");
+				})
+				
+			}
+//			demo1();
+
+			//接口
+			var Interface = function(name,methods){
+				if(arguments.length != 2){
+					alert("interface must have two paramters...");
+				}
+				this.name = name;//这个是接口的名字
+				this.methods = [];//定义个空数组来转载函数名
+				for (var i = 0; i < methods.length; i++) {
+					if(typeof methods[i] != "string"){
+						alert("method name must is String ...")
+					}else{
+						this.methods.push(methods[i])
+					}
+				}
+			}
+			//定义接口的一个静态方法来实现接口与实现类的直接检验
+			//静态方法不要写成Interface.prototype.* 因为这是写到接口原型连上的
+			//我们要把静态的函数直接写到类层次上
+			Interface.ensureImplements = function(object){
+				if(arguments.length<2){
+					alert("必须最少是2个参数");
+					return false;
+				}
+				//遍历
+				for (var i = 1; i < arguments.length; i++) {
+					var inter = arguments[i];
+					//如果你是接口就必须是Interface类型的
+					if(inter.constructor != Interface){
+						throw new Error("if is interface class must is Interface type");
+					}
+					//遍历函数集合并分析
+					for (var j = 0; j < inter.methods.length; j++) {
+						var method = inter.methods[j];
+						//实现类中必须有方法名字 和 接口中所有的方法名项目
+						if(!object[method] || typeof object[method] != "function"){
+							throw new Error("实现类并且没有完全实现接口中的所有方法...");
+						}
+					}
+				}
+			}
+			function demo2(){
+				/*用2个DAO体现门面模式
+				 */
+				//人员类
+				var PersonDao = new Interface("PersonDao",["getInfo","learn","merry"]);
+				var Person = function(){
+					this.name = "zhangsan";
+					this.address = "beijing";
+					this.getInfo = function(){
+						return "名字"+this.name+" 地址"+this.address;
+					}
+					this.learn = function(){
+						document.write("学习");
+					}
+					this.merry = function(){
+					}
+					//验证实现的接口
+					Interface.ensureImplements(this,PersonDao);
+				}
+				//dog Dao
+				var DogDao = new Interface("DogDao",["call","run","getInfo"]);
+				var Dog = function(){
+					this.name = "dahuang";
+					this.getInfo = function(){
+						return "狗的名字："+this.name;
+					}
+					this.run = function(){}
+					this.call = function(){}
+					//验证接口
+					Interface.ensureImplements(this,DogDao);
+				}
+				//需求是现在需要给养的狗办理相应的宠物领养证件。需要人和狗的信息
+				//1.不用门面
+				function action(person,dog){
+					var r = "GG" + new Date().getDate() + Math.floor(Math.random()*11);
+					var str = "办证成功：编号" +r + "<br>主人信息："+person.getInfo()+"<br>狗的信息"+
+					dog.getInfo();
+					document.write(str);
+				}
+				//action(new Person(),new Dog());
+				
+				//使用门面模式   复杂的事 交给门面来做
+				function facade(person,dog){
+					var r = "GG" + new Date().getDate() + Math.floor(Math.random()*11);
+					var str = "办证成功：编号" +r + "<br>主人信息："+person.getInfo()+"<br>狗的信息"+dog.getInfo();
+					this.action = function(){
+						return str;
+					}
+					
+				}
+				
+				function action2(person,dog){
+					document.write(new facade(person,dog).action());
+				}
+				action2(new Person(),new Dog());
+				
+				//用了门面模式，客户端代码变得简单了。
+			}
+			demo2();
+		</script>
+	</body>
+</html>

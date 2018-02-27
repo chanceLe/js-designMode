@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法22-观察者模式</title>
+	</head>
+	<body onload="init()">
+		<div id="box"></div>
+		<script>
+			//扩展函数  forEach和filter
+			
+			Function.prototype.method = function(name, fn) {
+			  this.prototype[name] = fn;
+			  return this;
+			};
+			if (!Array.prototype.forEach) { 
+			  Array.method('forEach', function(fn, thisObj) {
+			    var scope = thisObj || window;
+			    for ( var i = 0;len < this.length; ++i ) {
+			       //这样写不是简单的函数调用,是在函数调用的同事把this重新定位
+			       fn.call(scope, this[i], i, this);
+			    }
+			  });
+			}
+			//Array过滤器
+			if (!Array.prototype.filter ) {
+			  Array.method('filter', function(fn, thisObj) {
+			    var scope = thisObj || window;
+			    var a = [];
+				for ( var i = 0;len < this.length; ++i ) {
+					  //看看过滤函数,真留下来,假的删除
+				      if ( !fn.call(scope, this[i], i, this) ) {
+				           continue;
+				      }
+				      a.push(this[i]);
+				}
+				//返回新的数组
+			    return a;
+			  });
+			}
+			
+			/*观察者模式：
+			 * 分为两个角色:观察者和被观察者
+			 * 观察者模式的目的在于对程序的内在变化进行观察，当其有变化的时候可以得知，并作出相应反应
+			 */
+			
+			/*模拟订阅者和报社之间的关系
+			 *实际操作分为（推模式，拿模式）
+			 * 推送->长链接技术
+			 * 拿模式->定时去后台取得
+			*/
+			
+			function BusinessOne(name){
+				this.name = name;
+				//订阅者集合
+				this.subscribers = new Array();
+			}
+			//订阅者的发送消息的方法（推模式）
+			BusinessOne.prototype.delive = function(news){
+				var self = this;
+				//给每一个订阅者发送消息
+				this.subscribers.forEach(function(fn){
+					//调用接收者处理信息的函数
+					fn(news,self);
+				})
+			}
+			//扩展公共订阅的函数和取消订阅的函数
+			Function.prototype.subscribe = function(publisher){
+				var that = this;
+				//some访问数组对象，并且以参数的形式传回回调函数
+				//至少有一次返回是true的  那么some就是真
+				var alreadyExist = publisher.subscribers.some(
+					function(el){
+						//处理不能重复订阅的功能
+						if(el == that){
+							return;
+						}
+					}
+				);
+				//没有订阅就可以订阅
+				if(!alreadyExist){
+					publisher.subscribers.push(that);
+				}
+				return this;
+			}
+			//取消
+			Function.prototype.unsubscribe = function(publisher){
+				var that = this;
+				publisher.subscribers = publisher.subscribers.filter(
+					function(el){
+						if(el !== that){
+							return el;
+						}
+					}
+				);
+				return this;
+			}
+			
+			//创建发布者的实例
+			var b1 = new BusinessOne("CCTV");
+			var b2 = new BusinessOne("中国国防部");
+			
+			//发布（门面模式）
+			function addEventFacada(el,type,fn){
+				if(window.addEventListener){
+					//firefox
+					el.addEventListener(type,fn,false);
+				}else if(window.attachEvent){
+					//IE
+					el.attachEvent("on"+type,fn);
+				}else{
+					el["on"+type] = fn;
+				}
+			}
+			//主应用函数
+			var init = function(){
+				//创建观察者
+				var pageOne = function(news){
+					document.getElementById("info").value = 
+						"我发现了： "+"["+arguments[1].name +"] 发来的信息 --->"+news;
+				}
+				//订阅
+				pageOne.subscribe(b1).subscribe(b2);
+				//增加绑定事件
+				addEventFacada(document.getElementById("cctv"),"click",function(){
+					b1.delive(document.getElementById("cctvText").value);
+				});
+				addEventFacada(document.getElementById("gfb"),"click",function(){
+					b2.delive(document.getElementById("gfbText").value);
+				});
+			}
+		</script>
+		
+		<input type="text"  id="cctvText"/>
+		<input type="button" value='cctv发送' id="cctv"/>
+		<br />
+		<input type="text"  id="gfbText"/>
+		<input type="button" value='国防部发送' id="gfb"/>
+		<br />
+		<textarea id="info" cols="60" rows="20"></textarea>
+			
+	</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法8-链式调用</title>
+	</head>
+	<body>
+		<div id="box"></div>
+		<script type="text/javascript">
+			function demo1(){
+			(function(){
+				//创建一个cat类
+				function Cat(name){
+					this.name = name;
+					this.run = function(){
+						document.write(this.name+" start run"+"<br/>")
+					}
+					this.stopRun = function(){
+						document.write(this.name+" stop run"+"<br/>")
+					}
+					this.sing = function(){
+						document.write(this.name+" start singing"+"<br/>")
+					}
+					this.stopSing = function(){
+						document.write(this.name+" stop sing"+"<br/>")
+					}
+				}
+				//测试
+				var c = new Cat("maomi");
+				c.run();
+				c.sing();
+				c.stopRun();
+				c.stopSing();
+			})()}
+			
+			function demo2(){
+			(function(){
+				//创建一个cat类
+				function Cat(name){
+					this.name = name;
+					this.run = function(){
+						document.write(this.name+" start run"+"<br/>")
+						return this;
+					}
+					this.stopRun = function(){
+						document.write(this.name+" stop run"+"<br/>")
+						return this;
+					}
+					this.sing = function(){
+						document.write(this.name+" start singing"+"<br/>")
+						return this;
+					}
+					this.stopSing = function(){
+						document.write(this.name+" stop sing"+"<br/>")
+						return this;
+					}
+				}
+				//测试
+				var c = new Cat("lili");
+				c.run().sing().stopRun().stopSing();
+				
+			})()
+			}
+			
+			
+			//为了给类（Function类）扩展函数，定义一个它的静态函数
+			Function.prototype.method = function(name,fn){
+				this.prototype[name] = fn;
+				return this;
+			};
+			(function(){
+				//模仿jquery链式调用
+				function _$(els){};
+				//准备方法
+				_$.onready = function(fn){
+					//按需求把对象（_$）注册到window上
+					window.$ = function(){
+						return new _$(arguments);
+					}
+					fn();
+				}
+				//链式的对象增加jquery库提供的操作函数。
+				_$.method("addEvent",function(type,fn){
+					fn();
+				}).method("getEvent",function(fn,e){
+					fn();
+				}).method("addClass",function(className,fn){
+					fn();
+				}).method("removeClass",function(className,fn){
+					fn();
+				}).method("replaceClass",function(oldClass,newClass){
+					fn();
+				}).method("getStyle",function(el,fn){
+					fn();
+				}).method("setStyle",function(el,fn){
+					fn();
+				}).method("load",function(url,fn){
+					fn();
+				})	
+				
+				//开始使用
+				_$.onready(function(){
+					$("#box").addEvent("click",function(){
+						alert("click event")
+					})
+				})
+			})()
+		</script>
+	</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法9-工厂模式</title>
+	</head>
+	<body>
+		<script>
+			/*1.简单工厂 :通过第三方的类完成松耦合的任务 ->工厂。
+			 * 2.复杂工厂:通过把实例化的任务交个子类来完成，用来达到松耦合的目的 ->工厂。
+			 * 3.超级工厂:通过eval来完成智能工厂。
+			 */
+			/*工厂的目的在于判别接口最终用哪类来实例化、
+			 * 产生实例的过程不用new关键字
+			 * 最终达到的效果是多台，类与类之间的松耦合
+			 */
+			
+			//需要用到的继承和接口方法	
+			function extend(subClass,superClass){
+				//1.叫子类原型类属性等于父类的原型属性
+				//初始化一个中间空对象,为了转换主父类关系
+				var F = function(){};
+				F.prototype = superClass.prototype;
+				//2.让子类集成F
+				subClass.prototype = new F();
+				subClass.prototype.constructor = subClass;
+				//3.为子类增加属性superClass
+				subClass.superClass = superClass.prototype;
+				//4.增加一个保险,就算你是的原型类是超类(Object) 那么也要把你的构造函数级别讲下来
+				if(superClass.prototype.constructor == Object.prototype.constructor){
+					superClass.prototype.constructor = superClass;
+				}
+			}
+			//接口
+			var Interface = function(name,methods){
+				if(arguments.length != 2){
+					alert("interface must have two paramters...");
+				}
+				this.name = name;//这个是接口的名字
+				this.methods = [];//定义个空数组来转载函数名
+				for (var i = 0; i < methods.length; i++) {
+					if(typeof methods[i] != "string"){
+						alert("method name must is String ...")
+					}else{
+						this.methods.push(methods[i])
+					}
+				}
+			}
+			//定义接口的一个静态方法来实现接口与实现类的直接检验
+			//静态方法不要写成Interface.prototype.* 因为这是写到接口原型连上的
+			//我们要把静态的函数直接写到类层次上
+			Interface.ensureImplements = function(object){
+				if(arguments.length<2){
+					alert("必须最少是2个参数");
+					return false;
+				}
+				//遍历
+				for (var i = 1; i < arguments.length; i++) {
+					var inter = arguments[i];
+					//如果你是接口就必须是Interface类型的
+					if(inter.constructor != Interface){
+						throw new Error("if is interface class must is Interface type");
+					}
+					//遍历函数集合并分析
+					for (var j = 0; j < inter.methods.length; j++) {
+						var method = inter.methods[j];
+						//实现类中必须有方法名字 和 接口中所有的方法名项目
+						if(!object[method] || typeof object[method] != "function"){
+							throw new Error("实现类并且没有完全实现接口中的所有方法...");
+						}
+					}
+				}
+			}
+
+			function factory1(){
+				var Pet = new Interface("Pet",["eat","run","sing","register"]);
+				//宠物店
+				var PetShop = function(){}
+				PetShop.prototype = {
+					//出售宠物的方法
+					sellPetShop:function(kind){
+						//宠物对象
+						var pet;
+						//kind种类
+						switch(kind){
+							case 'dog':
+								pet = new Dog();
+								break;
+							case 'cat':
+								pet = new Cat();
+								break;
+							case 'pig':
+								pet = new Pig();
+								break;
+							default:
+								//鸟
+								pet = new Bird();
+						}
+						//验证接口
+						Interface.ensureImplements(pet,Pet);
+						pet.eat();
+						pet.register();
+						return pet;
+					}
+				}
+				//宠物基类
+				function BasePet(){
+					this.register = function(){
+						document.write("宠物登记 。。。<br>")
+					}
+					this.eat = function(){
+						document.write("吃顿饱饭 <br>")
+					}
+				}
+				//实现
+				function Dog(){
+					Dog.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小狗跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小狗唱歌。。。<br>")
+					}
+				}
+				function Cat(){
+					Cat.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猫跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猫唱歌。。。<br>")
+					}
+				}
+				function Pig(){
+					Pig.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猪跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猪唱歌。。。<br>")
+					}
+				}
+				function Bird(){
+					Bird.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小鸟跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小鸟唱歌。。。<br>")
+					}
+				}
+				
+				//继承
+				extend(Dog,BasePet);
+				extend(Pig,BasePet);
+				extend(Bird,BasePet);
+				extend(Cat,BasePet);
+				
+				//pcat宠物店
+				var pcatPetShop = new PetShop();
+				var flowerPig = pcatPetShop.sellPetShop("pig");
+				flowerPig.run();
+				
+				/*貌似很完美，但是他禁不住需求的变化
+				 * 比如说宠物商店又进来一些新的品种宠物
+				 * 这时候用目前的方法必须要修改宠物商店这个类
+				 * 用一个简单工厂来解决
+				 */
+				
+			}
+//			factory1();
+			
+			
+			function factory2(){
+				//静态工厂
+				var Pet = new Interface("Pet",["eat","run","sing","register"]);
+				var PetFactory = {
+					sellPetShop:function(kind){
+						//宠物对象
+						var pet;
+						//kind种类
+						switch(kind){
+							case 'dog':
+								pet = new Dog();
+								break;
+							case 'cat':
+								pet = new Cat();
+								break;
+							case 'pig':
+								pet = new Pig();
+								break;
+							default:
+								//鸟
+								pet = new Bird();
+						}
+						//验证接口
+						Interface.ensureImplements(pet,Pet);
+						return pet;
+					}
+				}
+				//利用工厂的新宠物店
+				var PetShop2 = function(){}
+				PetShop2.prototype = {
+					sellPetShop:function(kind){
+						var pet = PetFactory.sellPetShop(kind);
+						pet.eat();
+						pet.register();
+						return pet;
+					}
+				}
+				
+				//宠物基类
+				function BasePet(){
+					this.register = function(){
+						document.write("宠物登记 。。。<br>")
+					}
+					this.eat = function(){
+						document.write("吃顿饱饭 <br>")
+					}
+				}
+				//实现
+				function Dog(){
+					Dog.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小狗跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小狗唱歌。。。<br>")
+					}
+				}
+				function Cat(){
+					Cat.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猫跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猫唱歌。。。<br>")
+					}
+				}
+				function Pig(){
+					Pig.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猪跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猪唱歌。。。<br>")
+					}
+				}
+				function Bird(){
+					Bird.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小鸟跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小鸟唱歌。。。<br>")
+					}
+				}
+				
+				//继承
+				extend(Dog,BasePet);
+				extend(Pig,BasePet);
+				extend(Bird,BasePet);
+				extend(Cat,BasePet);
+				
+				var pcatPetShop2 = new PetShop2();
+				var flowerCat = pcatPetShop2.sellPetShop("cat");
+				flowerCat.sing();
+				
+				/*貌似很完美
+				 * 新的需求：都是宠物店
+				 * 张三的店主要卖哈士奇，李四的店卖各种鸟
+				 */
+			}
+			
+//			factory2();
+			
+			function factory3(){
+				var Pet = new Interface("Pet",["eat","run","sing","register"]);
+				//宠物店
+				var PetShop = function(){}
+				PetShop.prototype = {
+					//出售宠物的方法
+					sellPetShop:function(kind){
+						//宠物对象
+						var pet;
+						//kind种类
+						switch(kind){
+							case 'dog':
+								pet = new Dog();
+								break;
+							case 'cat':
+								pet = new Cat();
+								break;
+							case 'pig':
+								pet = new Pig();
+								break;
+							default:
+								//鸟
+								pet = new Bird();
+						}
+						//验证接口
+						Interface.ensureImplements(pet,Pet);
+						pet.eat();
+						pet.register();
+						return pet;
+					}
+				}
+				//宠物基类
+				function BasePet(){
+					this.register = function(){
+						document.write("宠物登记 。。。<br>")
+					}
+					this.eat = function(){
+						document.write("吃顿饱饭 <br>")
+					}
+				}
+				//实现
+				function Dog(){
+					Dog.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小狗跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小狗唱歌。。。<br>")
+					}
+				}
+				function Cat(){
+					Cat.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猫跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猫唱歌。。。<br>")
+					}
+				}
+				function Pig(){
+					Pig.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猪跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猪唱歌。。。<br>")
+					}
+				}
+				function Bird(){
+					Bird.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小鸟跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小鸟唱歌。。。<br>")
+					}
+				}
+				
+				//继承
+				extend(Dog,BasePet);
+				extend(Pig,BasePet);
+				extend(Bird,BasePet);
+				extend(Cat,BasePet);
+				
+				//1.把核心的商店变成一个抽象类
+				var Petshop = function(){}
+				Petshop.prototype = {
+					sellPetShop:function(kind){
+						var pet = this.sellPetshop(kind);
+						pet.eat();
+						pet.register();
+						return pet;
+					},
+					sellPetshop:function(model){
+						throw new Error("this is abstract class")
+					}
+				}
+				//2.利用子类满足上边的需求(多态)
+				var OnePetShop = function(){}
+				extend(OnePetShop,Petshop);
+				OnePetShop.prototype.sellPetshop = function(model){
+					var pet;
+						//kind种类
+						switch(model){
+							case 'dog':
+								pet = new Dog();
+								break;
+							default:
+								//鸟
+								pet = new Bird();
+						}
+						//验证接口
+						Interface.ensureImplements(pet,Pet);
+						pet.eat();
+						pet.register();
+						return pet;
+				}
+				
+				var TwoPetShop = function(){}
+				extend(TwoPetShop,Petshop);
+				TwoPetShop.prototype.sellPetshop = function(model){
+					var pet;
+						//kind种类
+						switch(model){
+							case 'pig':
+								pet = new Pig();
+								break;
+							default:
+								//鸟
+								pet = new Bird();
+						}
+						//验证接口
+						Interface.ensureImplements(pet,Pet);
+						pet.eat();
+						pet.register();
+						return pet;
+				}
+				
+				//实验
+				var jim = new OnePetShop();
+				var dog = jim.sellPetshop("dog");
+				dog.run();
+				
+				var tom = new TwoPetShop();
+				var pig = tom.sellPetshop("pig");
+				pig.run();
+			}
+			
+//			factory3();
+			
+			function factory4(){
+				var Pet = new Interface("Pet",["eat","run","sing","register"]);
+				//宠物基类
+				function BasePet(){
+					this.register = function(){
+						document.write("宠物登记 。。。<br>")
+					}
+					this.eat = function(){
+						document.write("吃顿饱饭 <br>")
+					}
+				}
+				//实现
+				function Dog(){
+					Dog.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小狗跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小狗唱歌。。。<br>")
+					}
+				}
+				function Cat(){
+					Cat.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猫跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猫唱歌。。。<br>")
+					}
+				}
+				function Pig(){
+					Pig.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小猪跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小猪唱歌。。。<br>")
+					}
+				}
+				function Bird(){
+					Bird.superClass.constructor.call(this);
+					this.run = function(){
+						document.write("小鸟跑步 。。<br>")
+					}
+					this.sing = function(){
+						document.write("小鸟唱歌。。。<br>")
+					}
+				}
+				
+				//继承
+				extend(Dog,BasePet);
+				extend(Pig,BasePet);
+				extend(Bird,BasePet);
+				extend(Cat,BasePet);
+				
+				//智能工厂
+				var PetFactory = {
+					sellPetShop:function(kind){
+						var pet;
+						pet= eval("new "+kind +"()");
+						Interface.ensureImplements(pet,Pet);//在工厂中验证接口关系。
+						return pet;
+					}
+				}
+				
+				//1.把核心的商店变成一个抽象类
+				var Petshop = function(){}
+				Petshop.prototype = {
+					sellPetShop:function(kind){
+						var pet = this.sellPetshop(kind);
+						pet.eat();
+						pet.register();
+						return pet;
+					},
+					sellPetshop:function(model){
+						throw new Error("this is abstract class")
+					}
+				}
+				//2.利用子类满足上边的需求(多态)
+				var OnePetShop = function(){}
+				extend(OnePetShop,Petshop);
+				OnePetShop.prototype.sellPetshop = function(model){
+						var pet=null;
+						var pets = ["Dog","Cat","Bird"];
+						for( v in pets){
+							if(pets[v] == model){
+								pet = PetFactory.sellPetShop(model);
+		//						Interface.ensureImplements(pet,Pet);
+								pet.eat();
+								pet.register();
+								break;
+							}
+						}
+						return pet;
+				}
+				
+				var TwoPetShop = function(){}
+				extend(TwoPetShop,Petshop);
+				TwoPetShop.prototype.sellPetshop = function(model){
+					var pet=null;
+						var pets = ["Pig"];
+						for( v in pets){
+							if(pets[v] == model){
+								pet = PetFactory.sellPetShop(model);
+		//						Interface.ensureImplements(pet,Pet);
+								pet.eat();
+								pet.register();
+								break;
+							}
+						}
+						return pet;
+				}
+				
+				//测试
+				var twoPetShop = new TwoPetShop();
+				twoPetShop.sellPetshop("Pig");
+				
+				var jim = new OnePetShop();
+					jim.sellPetshop("Dog");
+//					jim.sellPetShop("Pig");
+			}
+			factory4();
+		</script>
+	</body>
+</html>

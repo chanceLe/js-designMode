@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法17-装饰者模式下</title>
+	</head>
+	<body>
+		<div id="demo2">
+			
+		</div>
+		
+		<script type="text/javascript">
+			//装饰者可以用在类上，也可以用在函数上			
+			function demo1(){
+				//写一个装饰者函数，函数的目的是把目标函数的返回值变成大写			
+				function upperCase(fun){
+					return function(){
+						return fun().toUpperCase();
+					}	
+				}
+				//被封装的函数
+				function getDate(){
+					return new Date().toString();
+				}
+				//执行装饰
+				var getDateCaps = upperCase(getDate);
+				document.write(getDate());
+				document.write("<br>")
+				document.write(getDateCaps());
+				/*如果原有的功能不适合你的项目，需要大量扩充原油功能
+				 * 并且不想改变原有的接口，那么可以用装饰者模式。
+				 */			
+			}
+			//demo1();
+			
+			
+			function demo2(){
+				//装饰者完成对函数性能测试的任务
+				var listBuilder = function(el,listSize){
+					this.el = document.getElementById(el);
+					this.size = listSize;
+					//创建列表
+					this.Buildlist = function(){
+						var root = document.createElement("ol");
+						this.el.appendChild(root);
+						for(var i=0;i<this.size;i++){
+							var li = document.createElement("li");
+							root.appendChild(li);
+						}
+					}
+				};
+				var list = new listBuilder("demo2",8000);
+				//list.Buildlist();
+				//利用装饰者检测函数执行的时间
+				
+				var simpleProfiler = function(component){
+					this.component = component;
+					this.ListBuilder = function(){
+						var startDate = new Date().getTime();
+						this.component.Buildlist()
+						var endDate = new Date().getTime();
+						alert(endDate - startDate);
+					}
+				}
+				//new simpleProfiler(list).ListBuilder();
+				//改造为通用的装饰者，可以完成所有函数的效率测试。
+				
+				var simpleProfiler2 = function(component){
+					this.component = component;
+					this.action = function(methodName){
+						var self= this;
+						var method = component[methodName];
+						//如果是函数那就进行装饰
+						if(typeof method == "function"){
+							var startDate = new Date().getTime();
+							method.apply(self.component,arguments);
+							var endDate = new Date().getTime();
+							alert(endDate - startDate);
+						}
+					}
+				}
+				
+				new simpleProfiler2(list).action("Buildlist");
+				
+			}
+			demo2();
+
+		</script>
+	</body>
+</html>

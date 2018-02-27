@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法4-继承和聚合</title>
+	</head>
+	<body>
+		<script>
+			
+			//继承
+			//创建人员类
+			function Person(name){
+				this.name = name;
+			}
+			//创建教师类
+			function Teacher(name,books){
+				//call方法可以将一个函数的对象上下文从初始化变成由this来决定。
+				//调用Person的构造函数，因为person没有new，所以是空对象。
+				Person.call(this,name);
+				this.books = books;
+			}
+			// 使教师类继承人员类
+			Teacher.prototype = new Person();
+			Teacher.prototype.constructor = Teacher;
+			Teacher.prototype.getBook = function(){
+				return this.name +" "+this.books;
+			}
+			
+			//测试
+			var jim = new Teacher("JIm","extjs4");
+			//alert(jim.getBook());
+			
+			// 创建extend函数为了程序中所有的继承操作
+			function extend(subClass,superClass){
+				//1.让子类的原型类属性等于父类的原型属性。
+				// 初始化一个中间空对象，为了转换子父类关系。
+				var F = function(){};
+				F.prototype = superClass.prototype;
+				//2.让子类继承F
+				subClass.prototype = new F();
+				subClass.prototype.constructor = subClass;
+				//3.为子类增加superClass属性
+				subClass.superClass = superClass.prototype;
+				//4.增加一个保险，就算原型类是超级类（Object）那么也要把你的构造函数级别降下来。
+				if(superClass.prototype.constructor = Object.prototype.constructor){
+					superClass.prototype.constructor = superClass;
+				}
+			}
+			//测试
+			function Author(name,books){
+				Author.superClass.constructor.call(this,name);//低耦合
+				//person.call(this,name)  //  高耦合
+				this.books = books;
+				this.getBook = function(){
+					return this.name +" "+this.books;
+				}
+			}
+			//继承
+			extend(Author,Person);
+			
+			var peter = new Author("张丹","javascript");
+			alert(peter.getBook());
+			
+		
+			//聚合
+			//第一种：原型上方法的聚合
+			//掺元类：  有时候不需要严格的继承，真正需要的是一个类（几个类）中的一些函数。
+			var JSON = {};
+			JSON.prototype = {
+				changeString:function(){
+					var output = [];
+					for(key in this){
+						output.push(key+"-->"+this[key]);
+					}
+					return output;
+				}
+				
+			}
+			//制作聚合函数
+			function mixin(receivingClass,givingClass){
+				for(method in givingClass.prototype){
+					// 本类中没有这个函数情况下再聚合，否则跳过
+					if(!receivingClass.prototype[method]){
+						receivingClass.prototype[method] = givingClass.prototype[method];
+					}
+				}
+			};
+			//var o = {name:"zhangdan",age:27};
+			var o = function(){
+				this.name = "zhangsan";
+				this.age = 27;
+			}
+			mixin(o,JSON);
+			var a = new o();
+			document.write(a.changeString().join(","))
+			
+			
+			
+			//第二种：类中的函数聚合
+			var JSON2 = {
+				toChange:function(){
+					var output = [];
+					for(key in this){
+					 	output.push(key+"--》"+this[key]);
+					}
+					return output;
+				}
+			}
+			//聚合函数
+			function mixin2(receivingClass,givingClass){
+				for(method in givingClass){
+					if(!receivingClass.__proto__[method]){
+						receivingClass.__proto__[method] = givingClass[method];
+					}
+				}
+			}
+			var s = {name:"zhangdan",age:30};
+			mixin2(s,JSON2);
+			document.write(s.toChange().join(","))
+		</script>
+	</body>
+</html>

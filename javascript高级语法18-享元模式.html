@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法18-享元模式</title>
+	</head>
+	<body>
+		<script>
+			
+			/*享元模式是一个为了 提高性能（空间复杂度）的设计模式；
+			 * 他使用于程序会生产大量的相类似的对象时 耗用大量内存的问题；
+			 * 
+			 */
+			
+			function demo(){
+				//有一个城市要进行汽车登记
+	 			/*
+				 * 制造商，型号，日期，所有者，车牌号，最近一次登记
+				 */
+				var Car = function(make,model,year,owner,tag,renewDate){
+					this.make = make
+					this.model = model;
+					this.year = year
+					this.owner = owner
+					this.tag = tag
+					this.renewDate = renewDate;
+					this.getMake = function(){
+						return this.make;
+					}
+					
+				}
+				// 装饰者，计算函数运行时间
+				var simpleProfiler2 = function(component){
+					this.component = component;
+					this.action = function(methodName){
+						var self= this;
+						var method = component[methodName];
+						//如果是函数那就进行装饰
+						if(typeof method == "function"){
+							var startDate = new Date().getTime();
+							method.apply(self.component,arguments);
+							var endDate = new Date().getTime();
+							alert(endDate - startDate);
+						}
+					}
+				}
+				
+				//北京4150000全部要登记
+				var ca = new Array();
+				function addCar(){
+					this.begin = function(){
+						for(var i=0;i<4150000;i++){
+							ca.push(new Car("东风","雪铁龙","2017-5-16","张丹",
+							"京AM39385","2016-12-12"));
+						}
+					}
+				}				
+				new simpleProfiler2(new addCar()).action("begin");
+				//耗费了大量时间和内存占用
+			}
+//			demo();
+
+			 function xiangyuan(){
+			 	//1.内在状态
+			 	var Car = function(make,model,year,owner,tag,renewDate){
+					this.make = make
+					this.model = model;
+					this.year = year;
+					this.getMake = function(){
+						return this.make;
+					}
+					
+				}
+			 	//2.单例模式的简单工厂
+			 	var myCarInfo = function(){
+			 		this.createCar = function(make,model,year,owner,tag,renewDate){
+			 			var c = carInfoFactory(make,model,year);
+			 			c["owner"] = owner;
+			 			c["tag"] = tag;
+			 			c["renewDate"] = renewDate;
+			 			return c;		 			
+			 		}
+			 	}
+			 	//享元工厂
+			 	var carInfoFactory = (function(){
+			 		var  carInfo = {};
+			 		return function(make,model,year){
+			 			if(carInfo[make+model+year]){
+			 				return carInfo[make+model+year];
+			 			}else{
+			 				var newCar = new Car(make,model,year);
+			 				carInfo[make+model+year] = newCar;
+			 				return newCar;
+			 			}
+			 		}
+			 	})();
+			 	
+				//北京4150000全部要登记
+				var test  = new myCarInfo();
+				var startDate = new Date().getTime();
+				 var ca = new Array();
+				 for(var i=0;i<4150000;i++){
+				 	ca.push(test.createCar("东风","雪铁龙","2017-5-16","张丹",
+							"京AM39385","2016-12-12"));
+				 }
+				var endDate = new Date().getTime();
+				alert(endDate - startDate);
+			 }
+			 xiangyuan();
+			
+		</script>
+	</body>
+</html>

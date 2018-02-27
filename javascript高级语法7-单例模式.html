@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>javascript高级语法7-单例模式</title>
+	</head>
+	<body>
+		<script>
+			/*单例模式在js中使用非常频繁：
+			 * 1.普通单体
+			 * 2.具有局部变量的强大单体
+			 * 3.惰性单体
+			 * 4.分支单体
+			 */
+			function demo1(){
+				//1.普通单体
+			(function(){
+				//通过确保单例对象只存在一个实例，就可以确信自己在所有的代码中使用的是全局资源
+				//例如用户登录后的信息可以用一个单体存储
+				var UserInfo = {
+					name:"zhangdan",
+					code:"0202022",
+					deptName:"PD",
+					deptCode:"PD001",
+					getName:function(){
+						return "十里河"
+					}
+				}
+				alert(UserInfo.getName());
+				//这就是一个最简单的单体，他用来划分命名空间，并且将一群相关的属性方法组织到一起。 可以用.来访问。
+				var comm = {};  //把两个单体组织到comm的命名空间下。
+				comm.UserInfo = {
+					name:"zhangdan",
+					code:"0202022",
+				}
+				comm.funcInfo = {
+					funcName:"",
+					funcCode:"",
+				}
+				//在大型项目下，存在着你写的代码还有你引用的外界的JS类库，还有其他同事写的代码和类库。
+				//我们通过单体模式就可以很好的区分，这点只能慢慢体会了。
+			})()
+			}
+			
+			function demo2(){
+			//2.具有局部变量的强大单体
+			(function(){
+				//模拟一个ajax操作
+				function Ajax(){}
+				Ajax.request = function(url,fn){
+					if(true){
+						fn("javascript","extjs");
+					}
+				}
+				//通过闭包的原理解决在上例中的问题
+				
+				var UserInfo = (function(){
+					//利用闭包使单体拥有自己的私有局部变量
+					var name = '';
+					var code = '';
+					//利用ajax访问数据库来取得数据
+					Ajax.request("www.baidu.com",function(n,c){
+						name = n;
+						code = c;
+					})
+					return {
+						name:name,
+						code:code,
+					}
+				})();				
+				alert(UserInfo.name+"  "+UserInfo.code);
+			})()
+			}
+			
+			function demo3(){
+			//3.惰性单体
+			(function(){
+				//模拟一个ajax操作
+				function Ajax(){}
+				Ajax.request = function(url,fn){
+					if(true){
+						fn("demo3","extjs");
+					}
+				}
+				//通过闭包的原理解决在上例中的问题
+				
+				var UserInfo = (function(){
+					var userInfo = ""  //私有变量
+					
+					function init(){
+						var name = '';
+						var code = '';
+						//利用ajax访问数据库来取得数据
+						Ajax.request("www.baidu.com",function(n,c){
+							name = n;
+							code = c;
+						})
+						return {
+							name:name,
+							code:code,
+						}
+					}
+					return {
+						getInstance:function(){
+							if(userInfo){
+								return userInfo;
+							}else{
+								userInfo = init();
+								return userInfo;
+							}
+						}
+					}
+				})();				
+				alert(UserInfo.getInstance().name+"  "+UserInfo.getInstance().code);
+			})()
+			}
+			
+			function demo4(){
+				//4.分支单体
+				/*
+				 * 用处：在做ajax的时候根据不同的浏览器获得不同的xhr(XMLHttpRequest)
+				 *     在不同分辨率的情况下初始化不一样的界面
+				 */
+				(function(){
+					//得到机器分辨率
+					var screenWidth = window.screen.width;
+					var screenHeight = window.screen.height;
+					
+					var portalInfo = (function(){
+						var $12801024 = {info:"1,2,3,5"}
+						var $1024768 = {info:"4,2,1,2"}
+						if(screenWidth ==1920){
+							return $12801024;
+						}else if(screenWidth ==1024){
+							return $1024768
+						}
+					})();
+					alert(portalInfo.info);
+				})()
+			/*
+			 * 这些并非js的高深技术，是它的使用技巧。
+			 */
+			}
+		</script>
+	</body>
+</html>
